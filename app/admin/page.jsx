@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function AdminPage() {
   return (
-    <Shell kicker="ADMIN // QUIZ + LEAD MAGNET">
+    <Shell kicker="Admin · Quiz + lead magnet">
       <AdminClient />
     </Shell>
   );

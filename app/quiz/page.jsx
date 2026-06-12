@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function QuizPage() {
   return (
-    <Shell kicker="STEP 2 // THE 3-QUESTION UNLOCK">
+    <Shell kicker="Step 2 · The 3-question unlock">
       <Suspense fallback={null}>
         <QuizClient />
       </Suspense>

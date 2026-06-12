@@ -42,7 +42,7 @@ export default function WaitlistForm() {
 
   return (
     <form className="card" onSubmit={submit}>
-      <span className="card-tag">RESERVE YOUR SPOT</span>
+      <span className="card-tag">Reserve your spot</span>
 
       <div className="row-2">
         <div className="field">
@@ -84,12 +84,12 @@ export default function WaitlistForm() {
       </div>
 
       <button className="btn" type="submit" disabled={busy}>
-        {busy ? "LOCKING IT IN…" : "JOIN THE WAITING LIST →"}
+        {busy ? "Locking it in…" : "Join the waiting list →"}
       </button>
 
       {error && <p className="error">{error}</p>}
 
-      <p className="fineprint">NO SPAM. FIRST ACCESS + A BONUS ON THE NEXT SCREEN.</p>
+      <p className="fineprint">No spam, ever. First access + an instant bonus on the next screen.</p>
     </form>
   );
 }

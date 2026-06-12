@@ -4,20 +4,20 @@ import WaitlistForm from "./waitlist-form";
 
 export default function WaitlistPage() {
   return (
-    <Shell kicker="WAITING LIST // FIRST ACCESS">
+    <Shell kicker="Waiting list · First access">
       <div className="split">
         <div>
-          <span className="eyebrow reveal d1">DOORS OPENING SOON</span>
+          <span className="eyebrow reveal d1">JobHackers Global</span>
           <h1 className="headline reveal d2">
-            HACK THE
+            Get a job you love.
             <br />
-            <span className="strike">HIRING&nbsp;GAME.</span>
+            <span className="strike">Doors open soon.</span>
           </h1>
           <p className="lede reveal d3">
-            The job market isn&rsquo;t fair — it&rsquo;s a game with hidden rules.{" "}
-            <strong>JobHackers.global</strong> teaches you the rules. Join the
-            waiting list and be <strong>first through the door</strong> when we
-            open — plus get an instant bonus the moment you&rsquo;re in.
+            Escape career limbo. Bypass the application black hole and land the
+            salary you deserve. Join the waiting list to be{" "}
+            <strong>first through the door</strong> when the next cohort opens —
+            plus get an instant bonus the moment you&rsquo;re in.
           </p>
         </div>
 

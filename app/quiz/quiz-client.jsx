@@ -32,14 +32,14 @@ export default function QuizClient() {
     return (
       <div className="quiz-wrap">
         <div className="card" style={{ textAlign: "center" }}>
-          <span className="card-tag">HOLD ON</span>
-          <h2 className="question">JOIN THE LIST FIRST</h2>
+          <span className="card-tag">Hold on</span>
+          <h2 className="question">Join the waiting list first</h2>
           <p className="lede" style={{ margin: "0 auto 20px" }}>
             This unlock is reserved for people on the waiting list. It takes
-            ten seconds.
+            ten seconds to join.
           </p>
           <a className="btn" href="/">
-            JOIN THE WAITING LIST →
+            Join the waiting list →
           </a>
         </div>
       </div>
@@ -49,7 +49,7 @@ export default function QuizClient() {
   if (!config) {
     return (
       <div className="quiz-wrap">
-        <p className="step-count">LOADING…</p>
+        <p className="step-count">Loading…</p>
         {error && <p className="error">{error}</p>}
       </div>
     );
@@ -103,9 +103,9 @@ export default function QuizClient() {
           <div className="unlocked">
             <img className="hand" src="/jhg-hand.png" alt="" />
             <h2>
-              <span>UNLOCKED.</span>
+              <span>Unlocked.</span>
               <br />
-              HIGH FIVE, {lead.first_name.toUpperCase()}.
+              High five, {lead.first_name}.
             </h2>
             <p>
               The <strong>Five Finger Interview Maximizer</strong> is yours —
@@ -113,10 +113,10 @@ export default function QuizClient() {
               Grab it now, it opens in a new tab.
             </p>
             <a className="btn" href={magnetUrl} target="_blank" rel="noreferrer">
-              GET THE FIVE FINGER MAXIMIZER →
+              Get the Five Finger Maximizer →
             </a>
             <p className="fineprint">
-              YOU&rsquo;RE ON THE LIST. WATCH YOUR INBOX FOR FIRST ACCESS.
+              You&rsquo;re on the list. Watch your inbox for first access.
             </p>
           </div>
         </div>
@@ -129,18 +129,17 @@ export default function QuizClient() {
     return (
       <div className="quiz-wrap">
         <div className="card">
-          <span className="card-tag">{config.unlock_label || "THE 3-QUESTION UNLOCK"}</span>
+          <span className="card-tag">{config.unlock_label || "The 3-question unlock"}</span>
           <h2 className="question">
-            YOU&rsquo;RE IN, {lead.first_name.toUpperCase()}. NOW UNLOCK YOUR
-            EDGE.
+            You&rsquo;re in, {lead.first_name}. Now unlock your edge.
           </h2>
           <p className="lede" style={{ marginBottom: 20 }}>
             <strong>{config.quiz_title}</strong> — {config.quiz_subtitle}
           </p>
           <button className="btn" onClick={() => setStep(0)}>
-            START THE {total}-QUESTION UNLOCK →
+            Start the {total}-question unlock →
           </button>
-          <p className="fineprint">TAKES UNDER 30 SECONDS. NO WRONG ANSWERS.</p>
+          <p className="fineprint">Takes under 30 seconds. No wrong answers.</p>
         </div>
       </div>
     );
@@ -180,12 +179,12 @@ export default function QuizClient() {
         <div className="quiz-nav">
           {step > 0 ? (
             <button className="back-link" onClick={() => setStep(step - 1)}>
-              ← BACK
+              ← Back
             </button>
           ) : (
             <span />
           )}
-          <span className="step-count">{busy ? "UNLOCKING…" : `${answered}/${total} ANSWERED`}</span>
+          <span className="step-count">{busy ? "Unlocking…" : `${answered}/${total} answered`}</span>
         </div>
 
         {error && <p className="error">{error}</p>}

@@ -91,7 +91,7 @@ export default function AdminClient() {
     return (
       <div className="quiz-wrap" style={{ maxWidth: 440 }}>
         <form className="card" onSubmit={login}>
-          <span className="card-tag">RESTRICTED AREA</span>
+          <span className="card-tag">Restricted area</span>
           <div className="field">
             <label htmlFor="email">Admin email</label>
             <input
@@ -115,7 +115,7 @@ export default function AdminClient() {
             />
           </div>
           <button className="btn" type="submit" disabled={busy}>
-            {busy ? "CHECKING…" : "ENTER ADMIN →"}
+            {busy ? "Checking…" : "Log in →"}
           </button>
           {notice && <p className="error">{notice.text}</p>}
         </form>
@@ -129,14 +129,14 @@ export default function AdminClient() {
       <div className="card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
           <span className="card-tag" style={{ marginBottom: 0 }}>
-            QUIZ + LEAD MAGNET SETTINGS{adminName ? ` — ${adminName.toUpperCase()}` : ""}
+            Quiz + lead magnet settings{adminName ? ` — ${adminName}` : ""}
           </span>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="mini-btn" onClick={logout} disabled={busy}>
-              LOG OUT
+              Log out
             </button>
             <button className="btn" style={{ width: "auto", padding: "10px 22px" }} onClick={save} disabled={busy}>
-              {busy ? "SAVING…" : "SAVE CHANGES"}
+              {busy ? "Saving…" : "Save changes"}
             </button>
           </div>
         </div>
@@ -169,10 +169,10 @@ export default function AdminClient() {
             {config.questions.map((q, i) => (
               <div className="qcard" key={q.id || i}>
                 <div className="qcard-head">
-                  <span>QUESTION {String(i + 1).padStart(2, "0")}</span>
+                  <span>Question {String(i + 1).padStart(2, "0")}</span>
                   {config.questions.length > 1 && (
                     <button className="mini-btn" onClick={() => removeQuestion(i)}>
-                      REMOVE
+                      Remove
                     </button>
                   )}
                 </div>
@@ -196,7 +196,7 @@ export default function AdminClient() {
             ))}
 
             <button className="mini-btn" style={{ justifySelf: "start", padding: "10px 16px" }} onClick={addQuestion}>
-              + ADD QUESTION
+              + Add question
             </button>
           </div>
         </div>

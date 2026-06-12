@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
 import { getQuizConfig, saveQuizConfig } from "@/lib/supabase";
+import { verifyAdminToken, tokenFromRequest } from "@/lib/auth";
 import { DEFAULT_CONFIG } from "@/lib/defaults";
 
-function authorized(req) {
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected) return false; // refuse everything until a password is set
-  const given = req.headers.get("x-admin-password") || "";
-  return given.length > 0 && given === expected;
-}
-
 export async function GET(req) {
-  if (!authorized(req)) {
+  if (!(await verifyAdminToken(tokenFromRequest(req)))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   let config = null;
@@ -23,7 +17,7 @@ export async function GET(req) {
 }
 
 export async function PUT(req) {
-  if (!authorized(req)) {
+  if (!(await verifyAdminToken(tokenFromRequest(req)))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {

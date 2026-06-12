@@ -3,7 +3,8 @@
 import { useState } from "react";
 
 export default function AdminClient() {
-  const [password, setPassword] = useState("");
+  const [creds, setCreds] = useState({ email: "", password: "" });
+  const [adminName, setAdminName] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [config, setConfig] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -14,12 +15,19 @@ export default function AdminClient() {
     setBusy(true);
     setNotice(null);
     try {
-      const res = await fetch("/api/admin/config", {
-        headers: { "x-admin-password": password },
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(creds),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Wrong password.");
-      setConfig(data.config);
+      if (!res.ok) throw new Error(data.error || "Login failed.");
+      setAdminName(data.name);
+
+      const cfgRes = await fetch("/api/admin/config");
+      const cfgData = await cfgRes.json();
+      if (!cfgRes.ok) throw new Error(cfgData.error || "Could not load config.");
+      setConfig(cfgData.config);
       setUnlocked(true);
     } catch (err) {
       setNotice({ ok: false, text: err.message });
@@ -34,10 +42,7 @@ export default function AdminClient() {
     try {
       const res = await fetch("/api/admin/config", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-password": password,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config }),
       });
       const data = await res.json();
@@ -49,6 +54,13 @@ export default function AdminClient() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function logout() {
+    await fetch("/api/admin/login", { method: "DELETE" });
+    setUnlocked(false);
+    setConfig(null);
+    setCreds({ email: "", password: "" });
   }
 
   const setField = (k) => (e) => setConfig((c) => ({ ...c, [k]: e.target.value }));
@@ -81,13 +93,24 @@ export default function AdminClient() {
         <form className="card" onSubmit={login}>
           <span className="card-tag">RESTRICTED AREA</span>
           <div className="field">
-            <label htmlFor="pw">Admin password</label>
+            <label htmlFor="email">Admin email</label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="username"
+              value={creds.email}
+              onChange={(e) => setCreds((c) => ({ ...c, email: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="pw">Password</label>
             <input
               id="pw"
               type="password"
               autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={creds.password}
+              onChange={(e) => setCreds((c) => ({ ...c, password: e.target.value }))}
               required
             />
           </div>
@@ -104,11 +127,18 @@ export default function AdminClient() {
   return (
     <div className="admin-wrap">
       <div className="card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <span className="card-tag" style={{ marginBottom: 0 }}>QUIZ + LEAD MAGNET SETTINGS</span>
-          <button className="btn" style={{ width: "auto", padding: "10px 22px" }} onClick={save} disabled={busy}>
-            {busy ? "SAVING…" : "SAVE CHANGES"}
-          </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, gap: 12, flexWrap: "wrap" }}>
+          <span className="card-tag" style={{ marginBottom: 0 }}>
+            QUIZ + LEAD MAGNET SETTINGS{adminName ? ` — ${adminName.toUpperCase()}` : ""}
+          </span>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="mini-btn" onClick={logout} disabled={busy}>
+              LOG OUT
+            </button>
+            <button className="btn" style={{ width: "auto", padding: "10px 22px" }} onClick={save} disabled={busy}>
+              {busy ? "SAVING…" : "SAVE CHANGES"}
+            </button>
+          </div>
         </div>
 
         {notice && <p className={`notice ${notice.ok ? "ok" : "bad"}`}>{notice.text}</p>}

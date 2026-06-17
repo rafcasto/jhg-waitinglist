@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CONTENT_FIELDS, DEFAULT_CONFIG } from "@/lib/defaults";
+import { ADMIN_TABS, DEFAULT_CONFIG } from "@/lib/defaults";
+import { normalizeQuestions } from "@/lib/content";
 
 export default function AdminClient() {
   const [creds, setCreds] = useState({ email: "", password: "" });
@@ -9,6 +10,7 @@ export default function AdminClient() {
   const [role, setRole] = useState(null);
   const [unlocked, setUnlocked] = useState(false);
   const [tab, setTab] = useState("content"); // "content" | "team"
+  const [subTab, setSubTab] = useState(ADMIN_TABS[0].id);
   const [config, setConfig] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null); // { ok, text }
@@ -18,6 +20,14 @@ export default function AdminClient() {
   const [newMember, setNewMember] = useState({ name: "", email: "", password: "", role: "editor" });
 
   const isAdmin = role === "admin";
+
+  function hydrate(cfg) {
+    return {
+      ...cfg,
+      content: { ...DEFAULT_CONFIG.content, ...(cfg.content || {}) },
+      questions: normalizeQuestions(cfg.questions),
+    };
+  }
 
   async function login(e) {
     e.preventDefault();
@@ -37,8 +47,7 @@ export default function AdminClient() {
       const cfgRes = await fetch("/api/admin/config");
       const cfgData = await cfgRes.json();
       if (!cfgRes.ok) throw new Error(cfgData.error || "Could not load config.");
-      const cfg = cfgData.config;
-      setConfig({ ...cfg, content: { ...DEFAULT_CONFIG.content, ...(cfg.content || {}) } });
+      setConfig(hydrate(cfgData.config));
 
       if (data.role === "admin") loadTeam();
       setUnlocked(true);
@@ -60,7 +69,7 @@ export default function AdminClient() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed.");
-      setConfig({ ...data.config, content: { ...DEFAULT_CONFIG.content, ...(data.config.content || {}) } });
+      setConfig(hydrate(data.config));
       setNotice({ ok: true, text: "Saved. Live immediately." });
     } catch (err) {
       setNotice({ ok: false, text: err.message });
@@ -78,28 +87,65 @@ export default function AdminClient() {
     setCreds({ email: "", password: "" });
   }
 
-  // ---------- content helpers ----------
-  const setField = (k) => (e) => setConfig((c) => ({ ...c, [k]: e.target.value }));
-  const setContentField = (k) => (e) =>
-    setConfig((c) => ({ ...c, content: { ...c.content, [k]: e.target.value } }));
+  // ---------- content field helpers ----------
+  const fieldVal = (f) =>
+    f.scope === "root" ? config[f.key] ?? "" : config.content?.[f.key] ?? "";
+  const onFieldChange = (f) => (e) => {
+    const v = e.target.value;
+    setConfig((c) =>
+      f.scope === "root"
+        ? { ...c, [f.key]: v }
+        : { ...c, content: { ...c.content, [f.key]: v } }
+    );
+  };
 
   function setQuestion(i, patch) {
-    setConfig((c) => {
-      const questions = c.questions.map((q, idx) => (idx === i ? { ...q, ...patch } : q));
-      return { ...c, questions };
-    });
+    setConfig((c) => ({
+      ...c,
+      questions: c.questions.map((q, idx) => (idx === i ? { ...q, ...patch } : q)),
+    }));
   }
   function addQuestion() {
     setConfig((c) => ({
       ...c,
       questions: [
         ...c.questions,
-        { id: `q${c.questions.length + 1}_${Date.now()}`, text: "", options: ["", ""] },
+        {
+          id: `q${c.questions.length + 1}_${Date.now()}`,
+          text: "",
+          options: [{ label: "", points: 0 }, { label: "", points: 0 }],
+        },
       ],
     }));
   }
   function removeQuestion(i) {
     setConfig((c) => ({ ...c, questions: c.questions.filter((_, idx) => idx !== i) }));
+  }
+  function setOption(qi, oi, patch) {
+    setConfig((c) => ({
+      ...c,
+      questions: c.questions.map((q, i) =>
+        i === qi
+          ? { ...q, options: q.options.map((o, j) => (j === oi ? { ...o, ...patch } : o)) }
+          : q
+      ),
+    }));
+  }
+  function addOption(qi) {
+    setConfig((c) => ({
+      ...c,
+      questions: c.questions.map((q, i) =>
+        i === qi ? { ...q, options: [...q.options, { label: "", points: 0 }] } : q
+      ),
+    }));
+  }
+  function removeOption(qi, oi) {
+    setConfig((c) => ({
+      ...c,
+      questions: c.questions.map((q, i) =>
+        i === qi ? { ...q, options: q.options.filter((_, j) => j !== oi) } : q
+      ),
+    }));
   }
 
   // ---------- team helpers ----------
@@ -109,10 +155,9 @@ export default function AdminClient() {
       const data = await res.json();
       if (res.ok) setTeam(data.team || []);
     } catch {
-      /* ignore — team panel just shows empty */
+      /* ignore */
     }
   }
-
   async function teamRequest(method, body) {
     setBusy(true);
     setNotice(null);
@@ -130,7 +175,6 @@ export default function AdminClient() {
       setBusy(false);
     }
   }
-
   async function addMember(e) {
     e.preventDefault();
     try {
@@ -141,7 +185,6 @@ export default function AdminClient() {
       setNotice({ ok: false, text: err.message });
     }
   }
-
   async function changeRole(member, nextRole) {
     try {
       await teamRequest("PATCH", { id: member.id, role: nextRole });
@@ -150,7 +193,6 @@ export default function AdminClient() {
       setNotice({ ok: false, text: err.message });
     }
   }
-
   async function resetPassword(member) {
     const password = window.prompt(`New temporary password for ${member.email} (min 8 chars):`);
     if (!password) return;
@@ -161,7 +203,6 @@ export default function AdminClient() {
       setNotice({ ok: false, text: err.message });
     }
   }
-
   async function removeMember(member) {
     if (!window.confirm(`Remove ${member.email}? They lose all access immediately.`)) return;
     try {
@@ -209,11 +250,20 @@ export default function AdminClient() {
     );
   }
 
-  // group content fields by their `group` for tidy sections
-  const groups = CONTENT_FIELDS.reduce((acc, f) => {
-    (acc[f.group] = acc[f.group] || []).push(f);
-    return acc;
-  }, {});
+  const activeTab = ADMIN_TABS.find((t) => t.id === subTab) || ADMIN_TABS[0];
+
+  function renderField(f) {
+    return (
+      <div className="field" key={f.key} style={{ marginBottom: 12 }}>
+        <label>{f.label}</label>
+        {f.type === "textarea" ? (
+          <textarea rows={3} value={fieldVal(f)} onChange={onFieldChange(f)} />
+        ) : (
+          <input type={f.type === "url" ? "url" : "text"} value={fieldVal(f)} onChange={onFieldChange(f)} />
+        )}
+      </div>
+    );
+  }
 
   // ---------- editor ----------
   return (
@@ -235,7 +285,7 @@ export default function AdminClient() {
           </div>
         </div>
 
-        {/* tabs */}
+        {/* top-level tabs */}
         {isAdmin && (
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
             <button className="mini-btn" style={tab === "content" ? { borderColor: "#fff" } : {}} onClick={() => setTab("content")}>
@@ -251,79 +301,80 @@ export default function AdminClient() {
 
         {/* ---------------- CONTENT TAB ---------------- */}
         {tab === "content" && (
-          <div className="admin-scroll" style={{ marginTop: 14 }}>
-            <div className="admin-grid">
-              <div className="field">
-                <label>Lead magnet URL (delivered after quiz completion)</label>
-                <input type="url" value={config.lead_magnet_url} onChange={setField("lead_magnet_url")} />
-              </div>
-
-              <div className="row-2">
-                <div className="field">
-                  <label>Quiz title</label>
-                  <input type="text" value={config.quiz_title} onChange={setField("quiz_title")} />
-                </div>
-                <div className="field">
-                  <label>Unlock label (badge on intro card)</label>
-                  <input type="text" value={config.unlock_label || ""} onChange={setField("unlock_label")} />
-                </div>
-              </div>
-
-              <div className="field">
-                <label>Quiz subtitle / hook</label>
-                <textarea rows={2} value={config.quiz_subtitle} onChange={setField("quiz_subtitle")} />
-              </div>
-
-              {/* editable page copy, grouped */}
-              {Object.entries(groups).map(([group, fields]) => (
-                <div className="qcard" key={group}>
-                  <div className="qcard-head">
-                    <span>{group}</span>
-                  </div>
-                  {fields.map((f) => (
-                    <div className="field" key={f.key} style={{ marginBottom: 12 }}>
-                      <label>{f.label}</label>
-                      {f.type === "textarea" ? (
-                        <textarea rows={3} value={config.content[f.key] ?? ""} onChange={setContentField(f.key)} />
-                      ) : (
-                        <input type="text" value={config.content[f.key] ?? ""} onChange={setContentField(f.key)} />
-                      )}
-                    </div>
-                  ))}
-                </div>
+          <>
+            {/* sub-tab nav (funnel steps) */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8, marginBottom: 6 }}>
+              {ADMIN_TABS.map((t) => (
+                <button
+                  key={t.id}
+                  className="mini-btn"
+                  style={subTab === t.id ? { borderColor: "#fff" } : {}}
+                  onClick={() => setSubTab(t.id)}
+                >
+                  {t.label}
+                </button>
               ))}
-
-              {/* questions */}
-              {config.questions.map((q, i) => (
-                <div className="qcard" key={q.id || i}>
-                  <div className="qcard-head">
-                    <span>Question {String(i + 1).padStart(2, "0")}</span>
-                    {config.questions.length > 1 && (
-                      <button className="mini-btn" onClick={() => removeQuestion(i)}>
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  <div className="field">
-                    <label>Question text</label>
-                    <input type="text" value={q.text} onChange={(e) => setQuestion(i, { text: e.target.value })} />
-                  </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    <label>Answer options — one per line (min 2)</label>
-                    <textarea
-                      rows={Math.max(3, q.options.length)}
-                      value={q.options.join("\n")}
-                      onChange={(e) => setQuestion(i, { options: e.target.value.split("\n") })}
-                    />
-                  </div>
-                </div>
-              ))}
-
-              <button className="mini-btn" style={{ justifySelf: "start", padding: "10px 16px" }} onClick={addQuestion}>
-                + Add question
-              </button>
             </div>
-          </div>
+
+            <div className="admin-scroll" style={{ marginTop: 12 }}>
+              <div className="admin-grid">
+                {activeTab.note && <p className="fineprint" style={{ marginTop: 0 }}>{activeTab.note}</p>}
+
+                {activeTab.fields.map(renderField)}
+
+                {/* questions + per-answer points (Quiz questions tab only) */}
+                {activeTab.questions && (
+                  <>
+                    {config.questions.map((q, i) => (
+                      <div className="qcard" key={q.id || i}>
+                        <div className="qcard-head">
+                          <span>Question {String(i + 1).padStart(2, "0")}</span>
+                          {config.questions.length > 1 && (
+                            <button className="mini-btn" onClick={() => removeQuestion(i)}>Remove</button>
+                          )}
+                        </div>
+                        <div className="field">
+                          <label>Question text</label>
+                          <input type="text" value={q.text} onChange={(e) => setQuestion(i, { text: e.target.value })} />
+                        </div>
+                        <div className="field" style={{ marginBottom: 8 }}>
+                          <label>Answer options &amp; points (min 2)</label>
+                          {q.options.map((o, oi) => (
+                            <div key={oi} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                              <input
+                                type="text"
+                                placeholder={`Option ${oi + 1}`}
+                                value={o.label}
+                                onChange={(e) => setOption(i, oi, { label: e.target.value })}
+                                style={{ flex: 1 }}
+                              />
+                              <input
+                                type="number"
+                                min={0}
+                                title="Points"
+                                value={o.points}
+                                onChange={(e) => setOption(i, oi, { points: Number(e.target.value) || 0 })}
+                                style={{ width: 72 }}
+                              />
+                              {q.options.length > 2 && (
+                                <button className="mini-btn" onClick={() => removeOption(i, oi)} title="Remove option">×</button>
+                              )}
+                            </div>
+                          ))}
+                          <button className="mini-btn" style={{ padding: "8px 14px" }} onClick={() => addOption(i)}>
+                            + Add option
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <button className="mini-btn" style={{ justifySelf: "start", padding: "10px 16px" }} onClick={addQuestion}>
+                      + Add question
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </>
         )}
 
         {/* ---------------- TEAM TAB (admins only) ---------------- */}
@@ -374,12 +425,8 @@ export default function AdminClient() {
                       <option value="editor">Editor</option>
                       <option value="admin">Admin</option>
                     </select>
-                    <button className="mini-btn" onClick={() => resetPassword(m)} disabled={busy}>
-                      Reset password
-                    </button>
-                    <button className="mini-btn" onClick={() => removeMember(m)} disabled={busy}>
-                      Remove
-                    </button>
+                    <button className="mini-btn" onClick={() => resetPassword(m)} disabled={busy}>Reset password</button>
+                    <button className="mini-btn" onClick={() => removeMember(m)} disabled={busy}>Remove</button>
                   </div>
                 </div>
               ))}

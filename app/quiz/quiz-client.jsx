@@ -89,8 +89,8 @@ export default function QuizClient() {
     }
   }
 
-  function choose(q, option) {
-    const next = { ...answers, [q.id]: option };
+  function choose(q, label) {
+    const next = { ...answers, [q.id]: label };
     setAnswers(next);
     setTimeout(() => {
       if (step < total - 1) setStep(step + 1);
@@ -98,7 +98,7 @@ export default function QuizClient() {
     }, 220);
   }
 
-  // ---------- unlocked ----------
+  // ---------- delivery (unlocked) ----------
   if (step >= total && magnetUrl) {
     return (
       <div className="quiz-wrap">
@@ -113,7 +113,7 @@ export default function QuizClient() {
             <p>
               {fillTokens(
                 content.quiz_unlocked_body ||
-                  "The Five Finger Interview Maximizer is yours — the 5-point system to own any interview, formal or informal. Grab it now, it opens in a new tab.",
+                  "The Five Finger Interview Maximizer is yours, {first_name} — the 5-point system to own any interview, formal or informal. Grab it now, it opens in a new tab.",
                 tokens
               )}
             </p>
@@ -130,7 +130,7 @@ export default function QuizClient() {
     );
   }
 
-  // ---------- intro ----------
+  // ---------- intro (thank-you + start) ----------
   if (step === -1) {
     return (
       <div className="quiz-wrap">
@@ -146,7 +146,7 @@ export default function QuizClient() {
             <strong>{config.quiz_title}</strong> — {config.quiz_subtitle}
           </p>
           <button className="btn" onClick={() => setStep(0)}>
-            Start the {total}-question unlock →
+            {fillTokens(content.quiz_start_cta || "Start the {total}-question unlock →", tokens)}
           </button>
           <p className="fineprint">
             {content.quiz_intro_fineprint || "Takes under 30 seconds. No wrong answers."}
@@ -176,13 +176,13 @@ export default function QuizClient() {
         <div className="options">
           {q.options.map((option, i) => (
             <button
-              key={option}
-              className={`option ${answers[q.id] === option ? "selected" : ""}`}
+              key={option.label}
+              className={`option ${answers[q.id] === option.label ? "selected" : ""}`}
               disabled={busy}
-              onClick={() => choose(q, option)}
+              onClick={() => choose(q, option.label)}
             >
               <span className="key">{KEYS[i]}</span>
-              {option}
+              {option.label}
             </button>
           ))}
         </div>

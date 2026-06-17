@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { upsertLead, insertQuizResponse, getQuizConfig } from "@/lib/supabase";
+import { scoreAnswers } from "@/lib/content";
 import { DEFAULT_CONFIG, TAGS } from "@/lib/defaults";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -39,6 +40,10 @@ export async function POST(req) {
       );
     }
 
+    // Internal lead-qualification score, computed server-side from the stored
+    // config so it can't be tampered with. Stored, never returned to the client.
+    const { score, max_score } = scoreAnswers(cfg.questions, answers);
+
     // Lead moves to activation with the quiz tag
     await upsertLead({
       first_name,
@@ -49,9 +54,13 @@ export async function POST(req) {
       source,
     });
 
-    // Best-effort: store raw answers for segmentation (won't block delivery)
+    // Best-effort: store raw answers + qualification score (won't block delivery)
     try {
-      await insertQuizResponse({ email, answers, source });
+      await insertQuizResponse({
+        email,
+        answers: { items: answers, score, max_score },
+        source,
+      });
     } catch (e) {
       console.error("[quiz] response storage failed (non-blocking)", e);
     }

@@ -16,6 +16,12 @@ export async function GET(req) {
   return NextResponse.json({ config: config || DEFAULT_CONFIG });
 }
 
+// Coerce an option (string or {label,points}) into a clean {label, points}.
+function cleanOption(o) {
+  if (typeof o === "string") return { label: o.trim(), points: 0 };
+  return { label: (o?.label || "").trim(), points: Number(o?.points) || 0 };
+}
+
 export async function PUT(req) {
   if (!(await getEditor(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -34,7 +40,7 @@ export async function PUT(req) {
         (q) =>
           !q?.text?.trim() ||
           !Array.isArray(q.options) ||
-          q.options.filter((o) => o?.trim()).length < 2
+          q.options.map(cleanOption).filter((o) => o.label).length < 2
       )
     ) {
       return NextResponse.json(
@@ -61,7 +67,7 @@ export async function PUT(req) {
       questions: config.questions.map((q, i) => ({
         id: q.id || `q${i + 1}`,
         text: q.text.trim(),
-        options: q.options.map((o) => o.trim()).filter(Boolean),
+        options: q.options.map(cleanOption).filter((o) => o.label),
       })),
     };
 

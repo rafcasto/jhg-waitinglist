@@ -1,4 +1,3 @@
-import Shell from "@/components/Shell";
 import AdminClient from "./admin-client";
 
 export const metadata = {
@@ -7,9 +6,5 @@ export const metadata = {
 };
 
 export default function AdminPage() {
-  return (
-    <Shell kicker="Admin · Quiz + lead magnet">
-      <AdminClient />
-    </Shell>
-  );
+  return <AdminClient />;
 }

@@ -44,7 +44,7 @@ export async function POST(req) {
     // config so it can't be tampered with. Stored, never returned to the client.
     const { score, max_score } = scoreAnswers(cfg.questions, answers);
 
-    // Lead moves to activation with the quiz tag
+    // Lead moves to activation with the quiz tag, carrying its qualification score
     await upsertLead({
       first_name,
       last_name: last_name || null,
@@ -52,6 +52,7 @@ export async function POST(req) {
       stage: "activation",
       tag: TAGS.QUIZ,
       source,
+      score,
     });
 
     // Best-effort: store raw answers + qualification score (won't block delivery)

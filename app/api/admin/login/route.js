@@ -1,5 +1,19 @@
 import { NextResponse } from "next/server";
-import { adminLogin, ADMIN_COOKIE } from "@/lib/auth";
+import { adminLogin, getEditor, ADMIN_COOKIE } from "@/lib/auth";
+
+// GET — restore the current session from the cookie (used on page refresh).
+export async function GET(req) {
+  const ctx = await getEditor(req);
+  if (!ctx) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return NextResponse.json({
+    ok: true,
+    name: ctx.user?.user_metadata?.name || "Admin",
+    email: ctx.user?.email || "",
+    role: ctx.role,
+  });
+}
 
 export async function POST(req) {
   try {
@@ -16,6 +30,7 @@ export async function POST(req) {
     const res = NextResponse.json({
       ok: true,
       name: session.user?.user_metadata?.name || "Admin",
+      email: session.user?.email || email.trim().toLowerCase(),
       role: session.role,
     });
     res.cookies.set(ADMIN_COOKIE, session.token, {

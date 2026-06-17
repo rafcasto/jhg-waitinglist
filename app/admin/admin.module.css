@@ -203,6 +203,15 @@
 .optionRow input[type="text"] { flex: 1; }
 .points { width: 78px; }
 
+.saveBar {
+  max-width: 760px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-start;
+}
+
 /* ---------- login ---------- */
 .loginWrap {
   min-height: 100dvh;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ADMIN_TABS, DEFAULT_CONFIG } from "@/lib/defaults";
 import { normalizeQuestions } from "@/lib/content";
 import s from "./admin.module.css";
@@ -10,6 +10,7 @@ export default function AdminClient() {
   const [userEmail, setUserEmail] = useState("");
   const [adminName, setAdminName] = useState("");
   const [role, setRole] = useState(null);
+  const [checking, setChecking] = useState(true); // restoring session on load
   const [unlocked, setUnlocked] = useState(false);
   const [tab, setTab] = useState("dashboard");
   const [config, setConfig] = useState(null);
@@ -28,6 +29,36 @@ export default function AdminClient() {
     questions: normalizeQuestions(cfg.questions),
   });
 
+  // Load everything for a verified session and reveal the admin.
+  async function enterAdmin({ name, role, email }) {
+    setAdminName(name);
+    setRole(role);
+    setUserEmail(email);
+    try {
+      const cfgRes = await fetch("/api/admin/config");
+      const cfgData = await cfgRes.json();
+      if (cfgRes.ok) setConfig(hydrate(cfgData.config));
+    } catch {}
+    loadDashboard();
+    if (role === "admin") loadTeam();
+    setUnlocked(true);
+  }
+
+  // On mount: if the auth cookie is still valid, restore the session so a
+  // refresh doesn't bounce the user back to the login screen.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/login");
+        if (res.ok) await enterAdmin(await res.json());
+      } catch {
+        /* not logged in — show the login gate */
+      } finally {
+        setChecking(false);
+      }
+    })();
+  }, []);
+
   async function login(e) {
     e.preventDefault();
     setBusy(true);
@@ -40,18 +71,7 @@ export default function AdminClient() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed.");
-      setAdminName(data.name);
-      setRole(data.role);
-      setUserEmail(creds.email.trim().toLowerCase());
-
-      const cfgRes = await fetch("/api/admin/config");
-      const cfgData = await cfgRes.json();
-      if (!cfgRes.ok) throw new Error(cfgData.error || "Could not load config.");
-      setConfig(hydrate(cfgData.config));
-
-      loadDashboard();
-      if (data.role === "admin") loadTeam();
-      setUnlocked(true);
+      await enterAdmin(data);
     } catch (err) {
       setNotice({ ok: false, text: err.message });
     } finally {
@@ -199,6 +219,15 @@ export default function AdminClient() {
     }
   }
 
+  // ---------- still checking the cookie ----------
+  if (checking) {
+    return (
+      <div className={s.loginWrap}>
+        <p className="step-count">Loading…</p>
+      </div>
+    );
+  }
+
   // ---------- login gate ----------
   if (!unlocked) {
     return (
@@ -311,12 +340,7 @@ export default function AdminClient() {
         {/* ---------------- EDITOR TABS ---------------- */}
         {editorTab && config && (
           <>
-            <div className={s.editorHead}>
-              <h2 className={s.sectionTitle}>{editorTab.label}</h2>
-              <button className="btn" style={{ width: "auto", padding: "12px 24px" }} onClick={save} disabled={busy}>
-                {busy ? "Saving…" : "Save changes"}
-              </button>
-            </div>
+            <h2 className={s.sectionTitle}>{editorTab.label}</h2>
             {editorTab.note && <p className={s.note}>{editorTab.note}</p>}
 
             <div className="admin-grid" style={{ maxWidth: 760 }}>
@@ -365,6 +389,13 @@ export default function AdminClient() {
                   <button className="mini-btn" style={{ justifySelf: "start", padding: "10px 16px" }} onClick={addQuestion}>+ Add question</button>
                 </>
               )}
+            </div>
+
+            {/* save bar — pinned to the bottom of the editor */}
+            <div className={s.saveBar}>
+              <button className="btn" style={{ width: "auto", padding: "13px 30px" }} onClick={save} disabled={busy}>
+                {busy ? "Saving…" : "Save changes"}
+              </button>
             </div>
           </>
         )}

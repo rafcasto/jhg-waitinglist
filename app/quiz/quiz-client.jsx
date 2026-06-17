@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { fillTokens } from "@/lib/content";
 
 const KEYS = "ABCDEFGH";
 
@@ -55,9 +56,11 @@ export default function QuizClient() {
     );
   }
 
+  const content = config.content || {};
   const questions = config.questions || [];
   const total = questions.length;
   const answered = Object.keys(answers).length;
+  const tokens = { first_name: lead.first_name, total };
 
   async function submit(finalAnswers) {
     setBusy(true);
@@ -108,15 +111,18 @@ export default function QuizClient() {
               High five, {lead.first_name}.
             </h2>
             <p>
-              The <strong>Five Finger Interview Maximizer</strong> is yours —
-              the 5-point system to own any interview, formal or informal.
-              Grab it now, it opens in a new tab.
+              {fillTokens(
+                content.quiz_unlocked_body ||
+                  "The Five Finger Interview Maximizer is yours — the 5-point system to own any interview, formal or informal. Grab it now, it opens in a new tab.",
+                tokens
+              )}
             </p>
             <a className="btn" href={magnetUrl} target="_blank" rel="noreferrer">
-              Get the Five Finger Maximizer →
+              {content.quiz_unlocked_cta || "Get the Five Finger Maximizer →"}
             </a>
             <p className="fineprint">
-              You&rsquo;re on the list. Watch your inbox for first access.
+              {content.quiz_unlocked_fineprint ||
+                "You're on the list. Watch your inbox for first access."}
             </p>
           </div>
         </div>
@@ -131,7 +137,10 @@ export default function QuizClient() {
         <div className="card">
           <span className="card-tag">{config.unlock_label || "The 3-question unlock"}</span>
           <h2 className="question">
-            You&rsquo;re in, {lead.first_name}. Now unlock your edge.
+            {fillTokens(
+              content.quiz_intro_heading || "You're in, {first_name}. Now unlock your edge.",
+              tokens
+            )}
           </h2>
           <p className="lede" style={{ marginBottom: 20 }}>
             <strong>{config.quiz_title}</strong> — {config.quiz_subtitle}
@@ -139,7 +148,9 @@ export default function QuizClient() {
           <button className="btn" onClick={() => setStep(0)}>
             Start the {total}-question unlock →
           </button>
-          <p className="fineprint">Takes under 30 seconds. No wrong answers.</p>
+          <p className="fineprint">
+            {content.quiz_intro_fineprint || "Takes under 30 seconds. No wrong answers."}
+          </p>
         </div>
       </div>
     );

@@ -1,4 +1,8 @@
-export default function Shell({ children, kicker = "Waiting list · First access" }) {
+export default function Shell({
+  children,
+  kicker = "Waiting list · First access",
+  footerTagline = "Get a job you love",
+}) {
   return (
     <div className="shell">
       <header className="topbar">
@@ -17,7 +21,7 @@ export default function Shell({ children, kicker = "Waiting list · First access
 
       <footer className="footbar">
         <span>© {new Date().getFullYear()} JobHackers Global</span>
-        <span>Get a job you love</span>
+        <span>{footerTagline}</span>
       </footer>
     </div>
   );

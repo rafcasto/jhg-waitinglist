@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function WaitlistForm() {
+export default function WaitlistForm({ content = {} }) {
   const router = useRouter();
   const params = useSearchParams();
   const source = (params.get("source") || "").trim() || "direct";
@@ -42,7 +42,7 @@ export default function WaitlistForm() {
 
   return (
     <form className="card" onSubmit={submit}>
-      <span className="card-tag">Reserve your spot</span>
+      <span className="card-tag">{content.form_tag || "Reserve your spot"}</span>
 
       <div className="row-2">
         <div className="field">
@@ -84,12 +84,15 @@ export default function WaitlistForm() {
       </div>
 
       <button className="btn" type="submit" disabled={busy}>
-        {busy ? "Locking it in…" : "Join the waiting list →"}
+        {busy ? "Locking it in…" : content.form_cta || "Join the waiting list →"}
       </button>
 
       {error && <p className="error">{error}</p>}
 
-      <p className="fineprint">No spam, ever. First access + an instant bonus on the next screen.</p>
+      <p className="fineprint">
+        {content.form_fineprint ||
+          "No spam, ever. First access + an instant bonus on the next screen."}
+      </p>
     </form>
   );
 }

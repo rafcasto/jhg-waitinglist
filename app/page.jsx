@@ -1,29 +1,27 @@
 import { Suspense } from "react";
 import Shell from "@/components/Shell";
 import WaitlistForm from "./waitlist-form";
+import { loadContent } from "@/lib/content";
 
-export default function WaitlistPage() {
+export default async function WaitlistPage() {
+  const content = await loadContent();
+
   return (
-    <Shell kicker="Waiting list · First access">
+    <Shell kicker={content.landing_kicker} footerTagline={content.footer_tagline}>
       <div className="split">
         <div>
-          <span className="eyebrow reveal d1">JobHackers Global</span>
+          <span className="eyebrow reveal d1">{content.eyebrow}</span>
           <h1 className="headline reveal d2">
-            Get a job you love.
+            {content.headline}
             <br />
-            <span className="strike">Doors open soon.</span>
+            <span className="strike">{content.headline_strike}</span>
           </h1>
-          <p className="lede reveal d3">
-            Escape career limbo. Bypass the application black hole and land the
-            salary you deserve. Join the waiting list to be{" "}
-            <strong>first through the door</strong> when the next cohort opens —
-            plus get an instant bonus the moment you&rsquo;re in.
-          </p>
+          <p className="lede reveal d3">{content.lede}</p>
         </div>
 
         <div className="reveal d4">
           <Suspense fallback={null}>
-            <WaitlistForm />
+            <WaitlistForm content={content} />
           </Suspense>
         </div>
       </div>

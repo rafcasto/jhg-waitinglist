@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getQuizConfig } from "@/lib/supabase";
+import { mergeContent } from "@/lib/content";
 import { DEFAULT_CONFIG } from "@/lib/defaults";
 
 // Public config: questions + copy only. The lead-magnet URL is deliberately
@@ -17,5 +18,6 @@ export async function GET() {
     quiz_subtitle: cfg.quiz_subtitle,
     unlock_label: cfg.unlock_label,
     questions: cfg.questions,
+    content: mergeContent(cfg),
   });
 }

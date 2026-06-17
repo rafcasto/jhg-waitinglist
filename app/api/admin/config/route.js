@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getQuizConfig, saveQuizConfig } from "@/lib/supabase";
-import { verifyAdminToken, tokenFromRequest } from "@/lib/auth";
+import { getEditor } from "@/lib/auth";
 import { DEFAULT_CONFIG } from "@/lib/defaults";
 
 export async function GET(req) {
-  if (!(await verifyAdminToken(tokenFromRequest(req)))) {
+  if (!(await getEditor(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   let config = null;
@@ -17,7 +17,7 @@ export async function GET(req) {
 }
 
 export async function PUT(req) {
-  if (!(await verifyAdminToken(tokenFromRequest(req)))) {
+  if (!(await getEditor(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
@@ -43,11 +43,21 @@ export async function PUT(req) {
       );
     }
 
+    // Content: keep every default key, take the trimmed override when present.
+    const dc = DEFAULT_CONFIG.content;
+    const inContent = config.content || {};
+    const content = {};
+    for (const key of Object.keys(dc)) {
+      const v = inContent[key];
+      content[key] = typeof v === "string" && v.trim() ? v.trim() : dc[key];
+    }
+
     const clean = {
       quiz_title: (config.quiz_title || DEFAULT_CONFIG.quiz_title).trim(),
       quiz_subtitle: (config.quiz_subtitle || DEFAULT_CONFIG.quiz_subtitle).trim(),
       unlock_label: (config.unlock_label || DEFAULT_CONFIG.unlock_label).trim(),
       lead_magnet_url: config.lead_magnet_url.trim(),
+      content,
       questions: config.questions.map((q, i) => ({
         id: q.id || `q${i + 1}`,
         text: q.text.trim(),

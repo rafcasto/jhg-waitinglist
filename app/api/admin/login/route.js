@@ -16,6 +16,7 @@ export async function POST(req) {
     const res = NextResponse.json({
       ok: true,
       name: session.user?.user_metadata?.name || "Admin",
+      role: session.role,
     });
     res.cookies.set(ADMIN_COOKIE, session.token, {
       httpOnly: true,
